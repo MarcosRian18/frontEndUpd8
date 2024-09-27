@@ -27,12 +27,8 @@ function AuthForm() {
       try {
         const response = await authService.login({ email, password });
         console.log("Login bem-sucedido:", response);
-
-      
         localStorage.setItem("token", response.access_token);
-
-       
-        navigate("/dashboard"); // <-- redirect
+        navigate("/dashboard");
       } catch (error) {
         setError("Erro ao fazer login. Verifique suas credenciais.");
         console.error(error); // Para depuração

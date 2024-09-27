@@ -14,6 +14,10 @@ export default function Dashboard() {
   const [cidades, setCidades] = useState([]);
   const [searchTerm, setSearchTerm] = useState(''); 
 
+  // Paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const [clientesPerPage] = useState(10);
+
   const fetchClientes = async () => {
     try {
       const data = await authService.getClients();
@@ -25,14 +29,12 @@ export default function Dashboard() {
 
   const fetchEstados = async () => {
     try {
-        const data = await authService.getEstados();
-        console.log("Estados:", data); 
-        setEstados(data);
+      const data = await authService.getEstados();
+      setEstados(data);
     } catch (error) {
-        setError(error.message);
+      setError(error.message);
     }
-};
-
+  };
 
   const fetchCidades = async (estadoId) => {
     try {
@@ -104,10 +106,15 @@ export default function Dashboard() {
     fetchEstados();
   }, []);
 
-
   const filteredClientes = clientes.filter(cliente => 
     cliente.nome.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Paginação
+  const indexOfLastClient = currentPage * clientesPerPage;
+  const indexOfFirstClient = indexOfLastClient - clientesPerPage;
+  const currentClientes = filteredClientes.slice(indexOfFirstClient, indexOfLastClient);
+  const totalPages = Math.ceil(filteredClientes.length / clientesPerPage);
 
   const getEstadoNome = (estadoId) => {
     const estado = estados.find(e => e.id === estadoId);
@@ -122,19 +129,15 @@ export default function Dashboard() {
   return (
     <div className="dashboard" style={{ backgroundColor: '#0d1f28', color: '#ffffff', minHeight: '100vh', padding: '20px' }}>
       <Navbar />
-      <h2 className="title" style={{ textAlign: 'center', color: 'white' }}>Lista de Clientes</h2>
+      <h2 className="title" style={{ marginTop: '40px', textAlign: 'center', color: 'white' }}>Lista de Clientes</h2>
       {error && <div className="notification is-danger">{error}</div>}
 
       <div style={{ textAlign: 'center', marginBottom: '20px' }}>
         <button onClick={() => setModalVisible(true)} className="button is-success" style={{ marginRight: '10px' }}>
           Cadastrar Cliente
         </button>
-        <button onClick={() => setConsultaModalVisible(true)} className="button is-info">
-          Consultar Clientes
-        </button>
       </div>
 
-     
       {(modalVisible || editClient) && (
         <div className="modal is-active">
           <div className="modal-background" onClick={() => setModalVisible(false)}></div>
@@ -198,74 +201,52 @@ export default function Dashboard() {
         </div>
       )}
 
-   
-      {consultaModalVisible && (
-        <div className="modal is-active">
-          <div className="modal-background" onClick={() => setConsultaModalVisible(false)}></div>
-          <div className="modal-content" style={{ maxWidth: '500px', margin: 'auto', backgroundColor: '#2e2e2e', padding: '20px', borderRadius: '8px' }}>
-            <h3 className="title" style={{ color: 'white', textAlign: 'center' }}>Consultar Clientes</h3>
-            <p style={{textAlign: 'center', color: 'white' }}>Aqui você pode consultar os clientes cadastrados.</p>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+        <input
+          className="input"
+          type="text"
+          placeholder="Pesquisar clientes..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{ width: '60%', marginBottom: '20px' }}
+        />
+      </div>
 
-          
-            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-              <input 
-                className="input" 
-                type="text" 
-                placeholder="Buscar por nome..." 
-                value={searchTerm} 
-                onChange={(e) => setSearchTerm(e.target.value)} 
-                style={{ width: '80%', margin: '0 auto' }} 
-              />
-            </div>
-
-   
-            <div style={{ textAlign: 'center', margin: '10px 0' }}>
-              {filteredClientes.length > 0 ? (
-                filteredClientes.map(cliente => (
-                  <p key={cliente.id} style={{ color: 'white' }}>{cliente.nome}</p>
-                ))
-              ) : (
-                <p style={{ color: 'white' }}>Nenhum cliente encontrado.</p>
-              )}
-            </div>
-
-            <div style={{ textAlign: 'right', marginTop: '20px' }}>
-              <button className="button" onClick={() => setConsultaModalVisible(false)}>Fechar</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-   
-      <table className="table is-bordered" style={{ margin: '0 auto', width: '80%', backgroundColor: '#1e1e1e', color: '#ffffff', borderCollapse: 'collapse' }}>
+      <table className="table is-striped " style={{ margin: 'auto', width: '80%', textAlign: 'center' }}>
         <thead>
           <tr>
-            <th style={{ textAlign: 'center', color: 'white', padding: '10px', border: '1px solid #ffffff' }}>ID</th>
-            <th style={{ textAlign: 'center', color: 'white', padding: '10px', border: '1px solid #ffffff' }}>Nome</th>
-            <th style={{ textAlign: 'center', color: 'white', padding: '10px', border: '1px solid #ffffff' }}>CPF</th>
-            <th style={{ textAlign: 'center', color: 'white', padding: '10px', border: '1px solid #ffffff' }}>Data Nasc.</th>
-            <th style={{ textAlign: 'center', color: 'white', padding: '10px', border: '1px solid #ffffff' }}>Estado</th>
-            <th style={{ textAlign: 'center', color: 'white', padding: '10px', border: '1px solid #ffffff' }}>Sexo</th>
-            <th style={{ textAlign: 'center', color: 'white', padding: '10px', border: '1px solid #ffffff' }}>Ações</th>
+            <th className='has-text-centered'>Nome</th>
+            <th className='has-text-centered'>CPF</th>
+            <th className='has-text-centered'>Data de Nascimento</th>
+            <th className='has-text-centered'>Sexo</th>
+            <th className='has-text-centered'>Endereço</th>
+            <th className='has-text-centered'>Estado</th>
+            <th className='has-text-centered'>Ações</th>
           </tr>
         </thead>
         <tbody>
-          {clientes.map((cliente) => (
-            <tr key={cliente.id} style={{ textAlign: 'center', backgroundColor: '#2e2e2e' }}>
-              <td style={{ color: '#ffffff', padding: '10px', border: '1px solid #ffffff' }}>{cliente.id}</td>
-              <td style={{ color: '#ffffff', padding: '10px', border: '1px solid #ffffff' }}>{cliente.nome}</td>
-              <td style={{ color: '#ffffff', padding: '10px', border: '1px solid #ffffff' }}>{cliente.cpf}</td>
-              <td style={{ color: '#ffffff', padding: '10px', border: '1px solid #ffffff' }}>{cliente.data_nascimento}</td>
-              <td style={{ color: '#ffffff', padding: '10px', border: '1px solid #ffffff' }}>{getEstadoNome(cliente.estado_id)}</td>
-              <td style={{ color: '#ffffff', padding: '10px', border: '1px solid #ffffff' }}>{cliente.sexo}</td>
+          {currentClientes.map(cliente => (
+            <tr key={cliente.id}>
+              <td>{cliente.nome}</td>
+              <td>{cliente.cpf}</td>
+              <td>{cliente.data_nascimento}</td>
+              <td>{cliente.sexo}</td>
+              <td>{cliente.endereco}</td>
+              <td>{getEstadoNome(cliente.estado_id)}</td>
               <td>
-                <button onClick={() => handleEdit(cliente)} className="button is-info" style={{ marginRight: '10px' }}>Editar</button>
-                <button onClick={() => handleDelete(cliente.id)} className="button is-danger">Excluir</button>
+                <button onClick={() => handleEdit(cliente)} className="button mr-3 is-small">Editar</button>
+                <button onClick={() => handleDelete(cliente.id)} className="button is-small is-danger">Excluir</button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      <div className="pagination" style={{marginTop: '20px' ,gap: '80px' ,justifyContent: 'center' ,alignItems: 'center', width: '100%'}}>
+        <button className='button is-link' onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1}>Anterior</button>
+        <span>Página {currentPage} de {totalPages}</span>
+        <button className='button is-link' onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === totalPages}>Próxima</button>
+      </div>
     </div>
   );
 }
