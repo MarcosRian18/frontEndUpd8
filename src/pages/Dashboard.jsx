@@ -12,7 +12,7 @@ export default function Dashboard() {
   const [editClient, setEditClient] = useState(null);
   const [estados, setEstados] = useState([]);
   const [cidades, setCidades] = useState([]);
-  const [searchTerm, setSearchTerm] = useState(''); u
+  const [searchTerm, setSearchTerm] = useState(''); 
 
   const fetchClientes = async () => {
     try {
